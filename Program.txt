@@ -1,0 +1,163 @@
+﻿Without Tview:
+Probably will need to create a Video module so that we can compare release dates at least and implement a queue for it.
+Can be used to display most recent videos
+
+Import Video module
+
+MAIN FUNCTION:
+Create shell (function 0)
+List current favorited youtubers: (function 1)
+	If there are none, prompt for favorite youtubers
+	Save to database and data structure (function 2)
+List 10 most recent videos out of all youtubers (function 4)
+User now has 6 option: Program will list those options
+	List random videos from all youtubers (function 4) = Option 1
+	List random videos from a chosen youtuber (function 4) = Option 2
+	List most recent video from chosen youtuber (function 4) = Option 3
+	List most recent video from each youtuber = Option 4
+	Add youtuber to favorites (function 5)
+	Remove youtuber from favorites (function 5)
+	Exit (function 0)
+
+SHELL FUNCTION:
+Copy from snip-IT
+
+Retrieve data function:
+Create query	
+Get Query
+Return data
+
+GetMostRecentFromEach(array)
+iterate over array of all youtubers
+	Create a new Video structure
+	assign the value at index to the video channelname
+	call the Video function to get the latest video
+
+LISTING 10 MOST RECENT VIDEOS OUT OF ALL YOUTUBERS: PARAMETERS=ARRAY? OF YOUTUBER:
+Create a new array? of 10 * length of youtuber 
+OR Create a new Binary Tree?
+Create a new array of length 10 assigned to y
+Iterate through youtuber array:
+	Retrieve data from api from current youtuber in array - Call Video.RetrieveAPIData(youtuber, apikey, 10)
+	Add Title, Thumbnail, Release Date and Channel Name to Video struct
+	Add Video to array or Tree
+	Compare videos (based on release date) and add 10 most recent to array y
+Return array y
+
+
+LISTING VIDEOS FUNCTION - PARAMETERS=ARRAY? OF YOUTUBER, OPTION INTEGER:
+if option = 3
+	Retrieve data from api from youtuber passed in array (at position 0) - Call Video.RetrieveAPIData(youtuber, apikey, 1)
+	Add Title, Thumbnail, Release Date and Channel Name to Video struct
+	?Add Video to queue (API from top to bottom = most recent to least recent)?
+	Return Video queue
+	
+if option = 2:
+	Retrieve data from api from youtuber passed in array (at position 0)  - Call Video.RetrieveAPIData(youtuber, apikey, 100)
+	Add Title to array (for fast random access)
+	Return array
+	
+if option = 1:
+	Assign new array to x
+	Iterate through youtuber array:
+		For each youtuber, retrieve data from api -  - Call Video.RetrieveAPIData(youtuber, apikey, 50)
+		Add Title, Thumbnail, Release Date and Channel Name to Video struct
+		Add Video to array x (API from top to bottom = most recent to least recent)
+	Return array
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+Video Module:
+
+Create a struct named Video that holds:
+	1. Channel Name
+	2. Title of video
+	3. Thumbnail url
+	4. Release Date
+	?5. ChannelID?
+	
+?Video queue struct?
+	
+GET CHANNEL ID:
+Assign api url to searchURL
+assign url.Values{} to params
+Add queries to params:
+	snippet
+	channelName - given by users
+	channeltype
+	api key
+Encode query
+Send request and assign response to resp
+Read response.Body and assign to body
+Create struct to assign ChannelID
+Decode/Unmarshal response.Body/body
+Assign id to ChannelId
+
+RETRIEVE API DATA - PARAMS=NAME STRING, APIKEY STRING, OPTION INT)
+Assign api url to searchURL
+assign url.Values{} to params
+Add queries to params:
+	snippet
+	channelId
+	channeltype
+	AmountofVideosToRetrieve
+	api key
+Encode query
+Send request and assign response to resp
+Read response.Body and assign to body
+Create struct to assign ChannelID ???
+Decode/Unmarshal response.Body/body
+Return a struct
+
+Implement Compare interface:
+
+
+
+
+
+
+Tree Module:
+
+Create a struct Tree:
+	Node Video
+	Left Node
+	Right Node
+
+Compare function (Based on release date)
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+Image Module:
+This module will just display image if needed
+
+PS: I could store in a database the videos and youtubers we request. That would allow me to not have to make api calls when
+listing random videos.
