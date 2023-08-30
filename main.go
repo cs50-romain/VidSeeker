@@ -122,7 +122,19 @@ func parseOptions(option string) {
 		fmt.Print(Yellow + "Youtuber: " + Reset)
 		yreader := bufio.NewReader(os.Stdin)
 		uinput, _ := yreader.ReadString('\n')
-		GetMostRecentVideos(uinput, ch, &wg)
+		wg.Add(1)
+		go GetMostRecentVideos(uinput, ch, &wg)
+
+		go func() {
+			wg.Wait()
+			close(ch)
+		}()
+
+		for video := range ch {
+			fmt.Println(Red + video.ChannelName + Yellow + ":\t" + Red + video.VideoTitle + Reset)
+			displayThumbnail(video.Thumbnail)
+		}
+
 	} else if option == "2" {
 		for _, youtuber := range youtubers {
 			wg.Add(1)
