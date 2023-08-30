@@ -101,8 +101,8 @@ func (v *Video) GetLatestVideo(apik string) string{
 }
 
 func (v *Video) GetRandomVideo(apik string) {
-	maxresult := "100"
-	randomInt := rand.Intn(40)
+	maxresult := "200"
+	randomInt := rand.Intn(50)
 	v.GetChannelID(apik)
 	p := RetrieveAPIData(apik, v.ChannelId, maxresult) //youtube json with 200 videos
 	v.Thumbnail = p.Items[randomInt].Snippet.Thumbnails.Default.URL

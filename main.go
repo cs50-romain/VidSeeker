@@ -57,7 +57,7 @@ func GetRandomVideos(youtubers []string, apikey string) {
 		v.ChannelName = youtuber
 		v.GetRandomVideo(apikey)
 		fmt.Println(Red + youtuber + Yellow + ":\t" + Red + v.VideoTitle + Reset)
-		displayThumbnail(v.Thumbnail)
+		go displayThumbnail(v.Thumbnail)
 	}
 }
 
@@ -120,13 +120,14 @@ func parseOptions(option string) {
 		var arryoutuber = []string{uinput}
 		GetMostRecentVideos(arryoutuber, apikey)
 	} else if option == "2" {
-		GetMostRecentVideos(youtubers, apikey)
+		go GetMostRecentVideos(youtubers, apikey) // Hangs the shell until user presses enter
 	}else if option == "3" {
 		fmt.Print(Yellow + "Youtuber: " + Reset)
 		yreader := bufio.NewReader(os.Stdin)
 		uinput,_ := yreader.ReadString('\n')
-			//NEEDS RETHINKING - I don't want to pass the apikey everywhere
-		AddYoutuber(uinput, apikey)
+		
+		//NEEDS RETHINKING - I don't want to pass the apikey everywhere
+		go AddYoutuber(uinput, apikey)
 		youtubers = append(youtubers, uinput)
 	} else if option == "4" {
 		fmt.Print(Yellow + "Youtuber: " + Reset)
@@ -164,7 +165,6 @@ func main() {
 	for {
 		name, err := db.YoutuberById(idx)
 		if err != nil {
-			fmt.Println(err)
 			break
 		}
 		youtubers = append(youtubers, name)
