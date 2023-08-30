@@ -52,14 +52,13 @@ func parseCmd(input string) (string, error) {
 	return args[0], nil 
 }
 
-func GetRandomVideos(youtubers []string) {
-	for _, youtuber := range youtubers{
-		v := new(video.Video)
-		v.ChannelName = youtuber
-		v.GetRandomVideo(apikey)
-		fmt.Println(Red + youtuber + Yellow + ":\t" + Red + v.VideoTitle + Reset)
-		displayThumbnail(v.Thumbnail)
-	}
+func GetRandomVideos(youtuber string, ch chan<- video.Video, wg *sync.WaitGroup) {
+	v := new(video.Video)
+	v.ChannelName = youtuber
+	v.GetRandomVideo(apikey)
+	defer wg.Done()
+
+	ch <- *v
 }
 
 func GetMostRecentVideos(youtuber string, ch chan<- video.Video, wg *sync.WaitGroup) {
@@ -107,7 +106,8 @@ func ListOptions() {
 	fmt.Println("\t3: Add youtuber to favorites")
 	fmt.Println("\t4: Remove youtuber from favorites")
 	fmt.Println("\t5: Get random video from chosen youtuber")
-	fmt.Println("\t6: List Options" + Reset)
+	fmt.Println("\t6: Get random video from each favorited youtuber")
+	fmt.Println("\t7: List Options" + Reset)
 }
 
 func parseOptions(option string) {
@@ -141,15 +141,15 @@ func parseOptions(option string) {
 			go GetMostRecentVideos(youtuber, ch, &wg) // Hangs the shell until user presses enter
 		}
 
-			go func() {
-				wg.Wait()
-				close(ch)
-			}()
+		go func() {
+			wg.Wait()
+			close(ch)
+		}()
 
-			for video := range ch {
-				fmt.Println(Red + video.ChannelName + Yellow + ":\t" + Red + video.VideoTitle + Reset)
-				displayThumbnail(video.Thumbnail)
-			}
+		for video := range ch {
+			fmt.Println(Red + video.ChannelName + Yellow + ":\t" + Red + video.VideoTitle + Reset)
+			displayThumbnail(video.Thumbnail)
+		}
 	}else if option == "3" {
 		fmt.Print(Yellow + "Youtuber: " + Reset)
 		yreader := bufio.NewReader(os.Stdin)
@@ -164,7 +164,25 @@ func parseOptions(option string) {
 		rminput,_ := yreader.ReadString('\n')
 		youtubers = RemoveYoutuber(youtubers, rminput)
 	} else if option == "5" {
-		var arryoutuber = []string{}
+		fmt.Print(Yellow + "Youtuber: " + Reset)
+		yreader := bufio.NewReader(os.Stdin)
+		uinput, _ := yreader.ReadString('\n')
+		
+		wg.Add(1)
+		go GetRandomVideos(uinput, ch, &wg) // Hangs the shell until user presses enter
+
+		go func() {
+			wg.Wait()
+			close(ch)
+		}()
+
+		for video := range ch {
+			fmt.Println(Red + video.ChannelName + Yellow + ":\t" + Red + video.VideoTitle + Reset)
+			displayThumbnail(video.Thumbnail)
+		}
+
+		// OLD BUT I LIKED AND COULD STILL BE USED FOR ANOTHER OPTION
+		/*var arryoutuber = []string{}
 		for {
 			fmt.Print(Yellow + "Youtuber (q to stop): " + Reset)
 			yreader := bufio.NewReader(os.Stdin)
@@ -176,7 +194,23 @@ func parseOptions(option string) {
 			}
 		}
 		GetRandomVideos(arryoutuber)
+		*/
 	} else if option == "6" {
+		for _, youtuber := range youtubers {
+			wg.Add(1)
+			go GetRandomVideos(youtuber, ch, &wg) // Hangs the shell until user presses enter
+		}
+
+		go func() {
+			wg.Wait()
+			close(ch)
+		}()
+
+		for video := range ch {
+			fmt.Println(Red + video.ChannelName + Yellow + ":\t" + Red + video.VideoTitle + Reset)
+			displayThumbnail(video.Thumbnail)
+		}
+	} else if option == "7" {
 		ListOptions()
 	}
 }
