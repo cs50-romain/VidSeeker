@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 
 	"test/youtubecli/YT/Video"
 	"test/youtubecli/YT/db"
@@ -16,7 +17,7 @@ var Yellow = "\033[33m"
 var Red = "\033[31m"
 var White = "\033[97m"
 
-var apikey = "AIzaSyCBXw_TDGnsxIJMJiuT6itozH6oYGwd-GI"
+const apikey = "AIzaSyCBXw_TDGnsxIJMJiuT6itozH6oYGwd-GI"
 var youtubers = []string{}
 
 func displayThumbnail(url string) {
@@ -51,24 +52,24 @@ func parseCmd(input string) (string, error) {
 	return args[0], nil 
 }
 
-func GetRandomVideos(youtubers []string, apikey string) {
+func GetRandomVideos(youtubers []string) {
 	for _, youtuber := range youtubers{
 		v := new(video.Video)
 		v.ChannelName = youtuber
 		v.GetRandomVideo(apikey)
 		fmt.Println(Red + youtuber + Yellow + ":\t" + Red + v.VideoTitle + Reset)
-		go displayThumbnail(v.Thumbnail)
+		displayThumbnail(v.Thumbnail)
 	}
 }
 
-func GetMostRecentVideos(youtubers []string, apikey string) {
-	for _, youtuber := range youtubers{
-		v := new(video.Video)
-		v.ChannelName = youtuber
-		title := v.GetLatestVideo(apikey)
-		fmt.Println(Red + youtuber + Yellow + ":\t" + Red + title + Reset)
-		displayThumbnail(v.Thumbnail)
-	}
+func GetMostRecentVideos(youtuber string, ch chan<- video.Video, wg *sync.WaitGroup) {
+	v := new(video.Video)
+	v.ChannelName = youtuber
+	v.GetLatestVideo(apikey)
+	defer wg.Done()
+	//fmt.Println(Red + youtuber + Yellow + ":\t" + Red + title + Reset)
+	//displayThumbnail(v.Thumbnail)
+	ch <- *v
 }
 
 func RemoveYoutuber(youtubers []string, youtuber string) []string {
@@ -110,6 +111,10 @@ func ListOptions() {
 }
 
 func parseOptions(option string) {
+	ch := make(chan video.Video)
+	//video := new(video.Video)
+	var wg sync.WaitGroup
+
 	if option == "exit" {
 		fmt.Println(White + "[!] Quitting..." + Reset)
 		os.Exit(0)
@@ -117,17 +122,29 @@ func parseOptions(option string) {
 		fmt.Print(Yellow + "Youtuber: " + Reset)
 		yreader := bufio.NewReader(os.Stdin)
 		uinput, _ := yreader.ReadString('\n')
-		var arryoutuber = []string{uinput}
-		GetMostRecentVideos(arryoutuber, apikey)
+		GetMostRecentVideos(uinput, ch, &wg)
 	} else if option == "2" {
-		go GetMostRecentVideos(youtubers, apikey) // Hangs the shell until user presses enter
+		for _, youtuber := range youtubers {
+			wg.Add(1)
+			go GetMostRecentVideos(youtuber, ch, &wg) // Hangs the shell until user presses enter
+		}
+
+			go func() {
+				wg.Wait()
+				close(ch)
+			}()
+
+			for video := range ch {
+				fmt.Println(Red + video.ChannelName + Yellow + ":\t" + Red + video.VideoTitle + Reset)
+				displayThumbnail(video.Thumbnail)
+			}
 	}else if option == "3" {
 		fmt.Print(Yellow + "Youtuber: " + Reset)
 		yreader := bufio.NewReader(os.Stdin)
 		uinput,_ := yreader.ReadString('\n')
 		
 		//NEEDS RETHINKING - I don't want to pass the apikey everywhere
-		go AddYoutuber(uinput, apikey)
+		AddYoutuber(uinput, apikey)
 		youtubers = append(youtubers, uinput)
 	} else if option == "4" {
 		fmt.Print(Yellow + "Youtuber: " + Reset)
@@ -146,7 +163,7 @@ func parseOptions(option string) {
 				arryoutuber = append(arryoutuber, uinput)
 			}
 		}
-		GetRandomVideos(arryoutuber, apikey)
+		GetRandomVideos(arryoutuber)
 	} else if option == "6" {
 		ListOptions()
 	}

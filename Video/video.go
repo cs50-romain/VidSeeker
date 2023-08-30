@@ -90,14 +90,14 @@ func (v *Video) GetChannelID(apik string) error {
 	return nil
 }
 
-func (v *Video) GetLatestVideo(apik string) string{
+func (v *Video) GetLatestVideo(apik string) {
 	maxresult := "1"
 	v.GetChannelID(apik)
 	p := RetrieveAPIData(apik, v.ChannelId, maxresult)
 	v.Thumbnail = p.Items[0].Snippet.Thumbnails.Default.URL
 	v.VideoTitle = p.Items[0].Snippet.Title
 
-	return p.Items[0].Snippet.Title
+	// return p.Items[0].Snippet.Title
 }
 
 func (v *Video) GetRandomVideo(apik string) {
