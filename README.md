@@ -17,4 +17,3 @@ I might actually make this a website so to be seen for now.
 
 # Prerequisites
 A computer. And a terminal:)
-
