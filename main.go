@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	"test/youtubecli/YT/Video"
 	"test/youtubecli/YT/db"
@@ -248,7 +249,7 @@ func main() {
 	ListOptions()
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("> ")
+		fmt.Print(time.Now().Format(time.RFC850) + " > " + Reset)
 		input, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
