@@ -42,8 +42,8 @@ func Close() {
 	}
 }
 
-func AddYoutuber(name string, youtuberid string, playlistid string, user_id int) error {
-	result, err := db.Exec("INSERT INTO youtuber (channelid, channelname, playlistid, user_id) VALUES (?, ?, ?, ?)", youtuberid, name, playlistid, user_id)
+func AddYoutuber(name string, youtuberid string, playlistid string) error {
+	result, err := db.Exec("INSERT INTO youtuber (channelid, channelname, playlistid) VALUES (?, ?, ?)", youtuberid, name, playlistid)
 	if err != nil {
 		return fmt.Errorf("addYoutuber: %v", err)
 	}
@@ -55,8 +55,8 @@ func AddYoutuber(name string, youtuberid string, playlistid string, user_id int)
 	return nil
 }
 
-func RemoveYoutuber(name string, user_id int) error {
-	_, err := db.Exec("DELETE FROM youtuber WHERE channelname = ? AND user_id = ?", name, user_id)
+func RemoveYoutuber(name string) error {
+	_, err := db.Exec("DELETE FROM youtuber WHERE channelname='" + name + "';")	
 	if err != nil {
 		return fmt.Errorf("RemoveYoutuber: %v", err)
 	}
@@ -71,14 +71,4 @@ func YoutuberById(id int, user_id int) (string, error) {
 		return "", err
 	}
 	return youtuber, nil
-}
-
-func UserById(id int) (string, string, int, error) {
-	var dbuser, dbpass string
-	var user_id int
-	err := db.QueryRow("SELECT username,password,id FROM users WHERE id = ?", id).Scan(&dbuser, &dbpass, &user_id)
-	if err != nil {
-		return "", "", -1, err
-	}
-	return dbuser, dbpass, user_id, nil
 }

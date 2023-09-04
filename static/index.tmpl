@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Favorites</title>
+    <style>
+        /* Add your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+        #sidebar {
+            width: 20%;
+            background-color: #f4f4f4;
+            padding: 20px;
+            box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.1);
+        }
+        .hidden {
+            display: none;
+        }
+        /* Define your styles for the options as needed */
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>Options</h2>
+        <ul>
+            <li>
+                <form action="\option1" method="POST" class="option">
+                    <input type="hidden" name="template" value="template1">
+                    <input type="submit" value="Show Thumbnail of all your favorite Youtubers">
+                </form>
+            </li>
+            <li>
+                <a href="#option2" onclick="toggleInput('youtuber-name')">Show Thumbnail of YouTuber</a>
+                <!-- User input field for Option 2 -->
+                <form id="youtuber-name" action="\option2" method="POST" class="hidden">
+                    <label for="youtuber-name-input">Enter YouTuber Name:</label>
+                    <input type="text" id="youtuber-name-input" name="youtuber-name">
+                    <button type="submit">Show Thumbnail</button>
+                </form>
+            </li>
+            <li>
+                <a href="#option3" onclick="toggleInput('new-youtuber')">Add a YouTuber</a>
+                <!-- User input fields for Option 3 -->
+                <form id="new-youtuber" action="\option3" method="POST" class="hidden">
+                    <label for="new-youtuber-name-input">YouTuber Name:</label>
+                    <input type="text" id="new-youtuber-name-input" name="new-youtuber-name">
+                    <button type="submit">Add YouTuber</button>
+                </form>
+            </li>
+            <li>
+                <a href="#option4" onclick="toggleInput('remove-youtuber')">Remove a YouTuber</a>
+                <!-- User input field for Option 4 -->
+                <form id="remove-youtuber" action="\option4" method="POST" class="hidden">
+                    <label for="remove-youtuber-name-input">Enter YouTuber Name:</label>
+                    <input type="text" id="remove-youtuber-name-input" name="remove-youtuber-name">
+                    <button type="submit">Remove YouTuber</button>
+                </form>
+            </li>
+            <li><a href="#option5">Show Random Thumbnail</a></li>
+            <li>
+                <a href="#option6" onclick="toggleInput('random-youtuber')">Show Random Thumbnail of YouTuber</a>
+                <!-- User input field for Option 6 -->
+                <form id="random-youtuber" class="hidden">
+                    <label for="random-youtuber-name-input">Enter YouTuber Name:</label>
+                    <input type="text" id="random-youtuber-name-input" name="random-youtuber-name">
+                    <button type="submit">Show Random Thumbnail</button>
+                </form>
+            </li>
+        </ul>
+    </div>
+    <div>
+        <ul>
+            {{range .Video}}
+            <li>
+                <h2>{{.Youtuber}}</h2>
+                <img src="{{.Thumbnail}}">
+            <li>
+            {{end}}
+        </ul>
+    </div>
+
+    <script>
+        function toggleInput(id) {
+            const form = document.getElementById(id);
+            if (form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+            } else {
+                form.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

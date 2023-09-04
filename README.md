@@ -17,3 +17,12 @@ I might actually make this a website so to be seen for now.
 
 # Prerequisites
 A computer. And a terminal:)
+
+# Todo
+Turning this into a web application:
+1. Add login feature (html page, database, Google OAuth)
+2. Link database to user (Not sure how I'm gonna do this, does each user get its own video database?)
+3. Add index.html and every form needed.
+4. Create routes and html parsing
+5. Change main.go to gather input from forms rather than Stdin
+6. Output to index.html

@@ -1,4 +1,4 @@
-package video
+package yvideo
 
 import (
 	"encoding/json"

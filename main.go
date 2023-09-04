@@ -1,17 +1,26 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"os/exec"
-	"strings"
-	"sync"
-	"time"
+	//"sync"
+	"html/template"
+	"net/http"
 
 	"test/youtubecli/YT/Video"
 	"test/youtubecli/YT/db"
 )
+
+type Video struct {
+	Youtuber  string
+	Thumbnail string
+}
+
+type User struct {
+	Username	string
+	Password	string
+}
+
+var youtubers = []string{}
 
 var Reset = "\033[0m"
 var Yellow = "\033[33m"
@@ -19,200 +28,248 @@ var Red = "\033[31m"
 var White = "\033[97m"
 
 const apikey = "AIzaSyCBXw_TDGnsxIJMJiuT6itozH6oYGwd-GI"
-var youtubers = []string{}
+var videos = []Video{}
+var userid int
 
-func displayThumbnail(url string) {
-	cmdCurl := exec.Command("curl", "-s", url)//s.Items[0].Snippet.Thumbnails.Default.URL)
-	cmdImgCat := exec.Command("imgcat")
-
-	cmdImgCat.Stdin, _ = cmdCurl.StdoutPipe()
-	cmdImgCat.Stdout = os.Stdout
-
-	if err := cmdCurl.Start(); err != nil {
-		fmt.Println(err)
-	}
-
-	if err := cmdImgCat.Start(); err != nil {
-		fmt.Println(err)
-	}
-
-	if err := cmdCurl.Wait(); err != nil {
-		fmt.Println(err)
-	}
-	
-	if err := cmdImgCat.Wait(); err != nil {
-		fmt.Println("error:",err)
-	}
-}
-
-func parseCmd(input string) (string, error) {
-	input = strings.TrimSuffix(input, "\n")
-
-	args := strings.Split(input, " ")
-
-	return args[0], nil 
-}
-
-func GetRandomVideos(youtuber string, ch chan<- video.Video, wg *sync.WaitGroup) {
-	v := new(video.Video)
-	v.ChannelName = youtuber
-	v.GetRandomVideo(apikey)
-	defer wg.Done()
-
-	ch <- *v
-}
-
-func GetMostRecentVideos(youtuber string, ch chan<- video.Video, wg *sync.WaitGroup) {
-	v := new(video.Video)
-	v.ChannelName = youtuber
-	v.GetLatestVideo(apikey)
-	defer wg.Done()
-	//fmt.Println(Red + youtuber + Yellow + ":\t" + Red + title + Reset)
-	//displayThumbnail(v.Thumbnail)
-	ch <- *v
-}
-
-func RemoveYoutuber(youtubers []string, youtuber string) []string {
-	youtuber = strings.TrimSuffix(youtuber, "\n")
-	for idx, val := range youtubers {
-		if val == youtuber {
-			youtubers = append(youtubers[:idx], youtubers[idx+1:]...)
-		}
-	}
-
-	db.RemoveYoutuber(youtuber)
-
-	return youtubers
-}
-
-// THE WHOLE VIDEO PACKAGE WILL NEED REHTINKING
-func AddYoutuber(input string, apik string){
-	input = strings.TrimSuffix(input, "\n")
-	v := new(video.Video)
-	v.ChannelName = input
-	err := v.GetChannelID(apik)
+// REMOVE YOUTUBER
+func ViewOption4(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./static/index.tmpl")
 	if err != nil {
 		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	video := Video{
+		Youtuber: r.FormValue("remove-youtuber-name"),
+	}
+
+	for idx, value := range videos {
+		if video.Youtuber == value.Youtuber {
+			fmt.Println("Removing: ", video.Youtuber)
+			videos = append(videos[:idx], videos[idx+1:]...)
+			break
+		}
+	}
+
+	// REMOVE FROM DATABASE
+	db.RemoveYoutuber(video.Youtuber, userid)
+
+	data := struct {
+		Video []Video
+	}{
+		Video: videos,
+	}
+
+	err = t.Execute(w, data)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println(videos)
+	fmt.Println("Received Option 4")
+}
+
+// ADD YOUTUBER
+func ViewOption3(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./static/index.tmpl")
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	youtuber := r.FormValue("new-youtuber-name")
+	fmt.Println(youtuber)
+
+	// ADD TO DATABASE
+	v := new(yvideo.Video)
+	v.ChannelName = (youtuber)
+	err = v.GetChannelID(apikey)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Println(v)
 	playlistid := "UU" + v.ChannelId[2:]
+	db.AddYoutuber(v.ChannelName, v.ChannelId, playlistid, userid)
 
-	db.AddYoutuber(v.ChannelName, v.ChannelId, playlistid)
+	youtubers = append(youtubers, youtuber)
+	// WRITE DOWN CODE TO UPDATE VIDEOS ARRAY TO SHOW MOST RECENT VIDEO OF ALL YOUTUBERS, INCLUDING ONE JSUT ADDED
+	//videos = append(videos, video)
+
+	data := struct {
+		Video []Video
+	}{
+		Video: videos,
+	}
+
+	err = t.Execute(w, data)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/option1", http.StatusSeeOther)
+	fmt.Println("Received Option 3")
 }
 
-func ListOptions() {
-	fmt.Println(Yellow + "Options:")
-	fmt.Println("\t1: Get most recent video from chosen youtuber")
-	fmt.Println("\t2: Get most recent video from each favorited youtuber")
-	fmt.Println("\t3: Add youtuber to favorites")
-	fmt.Println("\t4: Remove youtuber from favorites")
-	fmt.Println("\t5: Get random video from chosen youtuber")
-	fmt.Println("\t6: Get random video from each favorited youtuber")
-	fmt.Println("\t7: List Options" + Reset)
+// ONE YOUTUBER"S VIDEO
+func ViewOption2(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./static/index.tmpl")
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	youtuber := r.FormValue("youtuber-name")
+	video := GetMostRecentVideo(youtuber)
+
+	singleVideo := []Video{}
+	singleVideo = append(singleVideo, Video{
+		Youtuber: video.ChannelName,
+		Thumbnail: video.Thumbnail,
+	})
+
+	data := struct {
+		Video []Video
+	}{
+		Video: singleVideo,
+	}
+
+	err = t.Execute(w, data)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("Received option 2")
 }
 
-func parseOptions(option string) {
-	ch := make(chan video.Video)
-	//video := new(video.Video)
-	var wg sync.WaitGroup
+// ALL MOST RECENT VIDEOS
+func ViewOption1(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./static/index.tmpl")
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	if option == "exit" {
-		fmt.Println(White + "[!] Quitting..." + Reset)
-		os.Exit(0)
-	} else if option == "1" {
-		fmt.Print(Yellow + "Youtuber: " + Reset)
-		yreader := bufio.NewReader(os.Stdin)
-		uinput, _ := yreader.ReadString('\n')
-		wg.Add(1)
-		go GetMostRecentVideos(uinput, ch, &wg)
+	var tempvideos = []Video{}
 
-		go func() {
-			wg.Wait()
-			close(ch)
-		}()
+	for _, youtuber := range youtubers{
+		video := GetMostRecentVideo(youtuber)
+		tempvideos = append(tempvideos, Video{
+			Youtuber: video.ChannelName,
+			Thumbnail: video.Thumbnail,
+		})
+	}
 
-		for video := range ch {
-			fmt.Println(Red + video.ChannelName + Yellow + ":\t" + Red + video.VideoTitle + Reset)
-			displayThumbnail(video.Thumbnail)
+	data := struct {
+		Video []Video
+	}{
+		Video: tempvideos,
+	}
+
+	err = t.Execute(w, data)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("Received option1")
+}
+
+func viewLogin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.ServeFile(w, r, "./static/login.html")
+	}
+
+	user := User {
+		Username: r.FormValue("username"),
+		Password: r.FormValue("password"),
+	}
+
+	if loginCheck(user) {
+		InitArray()
+		fmt.Println("init: ", youtubers)
+		http.Redirect(w, r, "/index", http.StatusSeeOther)
+	} else {
+		fmt.Println("Invalid credentials")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+}
+
+func viewIndex(w http.ResponseWriter, r *http.Request) {
+	//http.ServeFile(w, r, "./static/index.html")
+	t, err := template.ParseFiles("./static/index.tmpl")
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		Video []Video
+	}{
+		Video: videos,
+	}
+
+	err = t.Execute(w, data)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func loginCheck(user User) bool{
+	idx := 0
+	for {
+		dbuser, dbpass, user_id, err := db.UserById(idx)
+		if err != nil {
+			fmt.Println(err)
 		}
-
-	} else if option == "2" {
-		for _, youtuber := range youtubers {
-			wg.Add(1)
-			go GetMostRecentVideos(youtuber, ch, &wg) // Hangs the shell until user presses enter
+		if user.Username == dbuser && user.Password == dbpass {
+			userid = user_id
+			return true
 		}
+		idx++
+	}
 
-		go func() {
-			wg.Wait()
-			close(ch)
-		}()
+	return false
+}
 
-		for video := range ch {
-			fmt.Println(Red + video.ChannelName + Yellow + ":\t" + Red + video.VideoTitle + Reset)
-			displayThumbnail(video.Thumbnail)
+func GetRandomVideos(youtuber string) yvideo.Video {
+	v := new(yvideo.Video)
+	v.ChannelName = youtuber
+	v.GetRandomVideo(apikey)
+
+	return *v
+}
+
+func GetMostRecentVideo(youtuber string) yvideo.Video {
+	v := new(yvideo.Video)
+	v.ChannelName = youtuber
+	v.GetLatestVideo(apikey)
+
+	return *v
+}
+
+func InitArray(){
+	idx := 4 
+	for idx < 15{
+		name, err := db.YoutuberById(idx, userid)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			youtubers = append(youtubers, name)
 		}
-	}else if option == "3" {
-		fmt.Print(Yellow + "Youtuber: " + Reset)
-		yreader := bufio.NewReader(os.Stdin)
-		uinput,_ := yreader.ReadString('\n')
-		
-		//NEEDS RETHINKING - I don't want to pass the apikey everywhere
-		AddYoutuber(uinput, apikey)
-		youtubers = append(youtubers, uinput)
-	} else if option == "4" {
-		fmt.Print(Yellow + "Youtuber: " + Reset)
-		yreader := bufio.NewReader(os.Stdin)
-		rminput,_ := yreader.ReadString('\n')
-		youtubers = RemoveYoutuber(youtubers, rminput)
-	} else if option == "5" {
-		fmt.Print(Yellow + "Youtuber: " + Reset)
-		yreader := bufio.NewReader(os.Stdin)
-		uinput, _ := yreader.ReadString('\n')
-		
-		wg.Add(1)
-		go GetRandomVideos(uinput, ch, &wg) // Hangs the shell until user presses enter
-
-		go func() {
-			wg.Wait()
-			close(ch)
-		}()
-
-		for video := range ch {
-			fmt.Println(Red + video.ChannelName + Yellow + ":\t" + Red + video.VideoTitle + Reset)
-			displayThumbnail(video.Thumbnail)
-		}
-
-		// OLD BUT I LIKED AND COULD STILL BE USED FOR ANOTHER OPTION
-		/*var arryoutuber = []string{}
-		for {
-			fmt.Print(Yellow + "Youtuber (q to stop): " + Reset)
-			yreader := bufio.NewReader(os.Stdin)
-			uinput, _ := yreader.ReadString('\n')
-			if uinput == "q\n" {
-				break
-			}else {
-				arryoutuber = append(arryoutuber, uinput)
-			}
-		}
-		GetRandomVideos(arryoutuber)
-		*/
-	} else if option == "6" {
-		for _, youtuber := range youtubers {
-			wg.Add(1)
-			go GetRandomVideos(youtuber, ch, &wg) // Hangs the shell until user presses enter
-		}
-
-		go func() {
-			wg.Wait()
-			close(ch)
-		}()
-
-		for video := range ch {
-			fmt.Println(Red + video.ChannelName + Yellow + ":\t" + Red + video.VideoTitle + Reset)
-			displayThumbnail(video.Thumbnail)
-		}
-	} else if option == "7" {
-		ListOptions()
+		idx++
 	}
 }
 
@@ -223,39 +280,12 @@ func main() {
 	}
 	defer db.Close()
 
-	// Initialize youtuber array from youtubers in database
-	// Index starts at 4 because id database table starts at 4
-	idx := 4 
-	for {
-		name, err := db.YoutuberById(idx)
-		if err != nil {
-			break
-		}
-		youtubers = append(youtubers, name)
-		idx++
-	}
-
-	if len(youtubers) != 0 {
-		fmt.Println(Yellow + "Current favorited youtubers" + Reset)
-		for _, youtuber := range youtubers {
-			fmt.Print(Red + youtuber + Yellow + " | " + Reset)
-		}
-	} else {
-		fmt.Println(Yellow + "No favorite youtuber, press 3 to enter one" + Reset)
-	}
-	fmt.Println()
-
-	// List options and START SHELL
-	ListOptions()
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		fmt.Print(time.Now().Format(time.RFC850) + " > " + Reset)
-		input, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
-
-		option, err := parseCmd(input)
-		parseOptions(option)
-	} // END OF SHELL INPUT
+	http.HandleFunc("/", viewLogin)
+	http.HandleFunc("/index", viewIndex)
+	http.HandleFunc("/option1", ViewOption1)
+	http.HandleFunc("/option2", ViewOption2)
+	http.HandleFunc("/option3", ViewOption3)
+	http.HandleFunc("/option4", ViewOption4)
+	http.ListenAndServe(":8080", nil)
+	fmt.Println("Listening...")
 }
