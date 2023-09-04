@@ -22,11 +22,6 @@ type User struct {
 
 var youtubers = []string{}
 
-var Reset = "\033[0m"
-var Yellow = "\033[33m"
-var Red = "\033[31m"
-var White = "\033[97m"
-
 const apikey = "AIzaSyCBXw_TDGnsxIJMJiuT6itozH6oYGwd-GI"
 var videos = []Video{}
 var userid int
@@ -54,6 +49,7 @@ func ViewOption4(w http.ResponseWriter, r *http.Request) {
 
 	// REMOVE FROM DATABASE
 	db.RemoveYoutuber(video.Youtuber, userid)
+	InitArray()
 
 	data := struct {
 		Video []Video
@@ -96,14 +92,22 @@ func ViewOption3(w http.ResponseWriter, r *http.Request) {
 	playlistid := "UU" + v.ChannelId[2:]
 	db.AddYoutuber(v.ChannelName, v.ChannelId, playlistid, userid)
 
-	youtubers = append(youtubers, youtuber)
-	// WRITE DOWN CODE TO UPDATE VIDEOS ARRAY TO SHOW MOST RECENT VIDEO OF ALL YOUTUBERS, INCLUDING ONE JSUT ADDED
-	//videos = append(videos, video)
+	InitArray()
+
+	var tempvideos = []Video{}
+
+	for _, youtuber := range youtubers{
+		video := GetMostRecentVideo(youtuber)
+		tempvideos = append(tempvideos, Video{
+			Youtuber: video.ChannelName,
+			Thumbnail: video.Thumbnail,
+		})
+	}
 
 	data := struct {
 		Video []Video
 	}{
-		Video: videos,
+		Video: tempvideos,
 	}
 
 	err = t.Execute(w, data)
@@ -232,9 +236,11 @@ func loginCheck(user User) bool{
 	for {
 		dbuser, dbpass, user_id, err := db.UserById(idx)
 		if err != nil {
+			fmt.Println("Blocking here")
 			fmt.Println(err)
 		}
 		if user.Username == dbuser && user.Password == dbpass {
+			fmt.Println("Making it here")
 			userid = user_id
 			return true
 		}
@@ -261,8 +267,11 @@ func GetMostRecentVideo(youtuber string) yvideo.Video {
 }
 
 func InitArray(){
+	if len(youtubers) > 0 {
+		youtubers = []string{}
+	}
 	idx := 4 
-	for idx < 15{
+	for idx < 25{
 		name, err := db.YoutuberById(idx, userid)
 		if err != nil {
 			fmt.Println(err)
