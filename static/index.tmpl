@@ -7,17 +7,53 @@
     <style>
         /* Add your CSS styles here */
         body {
+            margin: 0;
+            padding: 0;
             font-family: Arial, sans-serif;
             display: flex;
+            align-items: flex-start;
         }
         #sidebar {
-            width: 20%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200px;
             background-color: #f4f4f4;
             padding: 20px;
             box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.1);
         }
+        #content {
+            flex-grow: 1;
+            padding: 10px;
+            margin-left: 250px;
+        }
         .hidden {
             display: none;
+        }
+
+        #content {
+        }
+
+        h2 {
+            color: #c62214;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        ul {
+            list-style-type: none;
+        }
+
+        #sidebar ul {
+            padding: 10px;
+            border-bottom: 1px solid #555;
+            display: block;
+        }
+
+        #sidebar ul li {
+            max-height: 100px;
+            overflow: auto;
         }
         /* Define your styles for the options as needed */
     </style>
@@ -29,7 +65,7 @@
             <li>
                 <form action="\option1" method="POST" class="option">
                     <input type="hidden" name="template" value="template1">
-                    <input type="submit" value="Show Thumbnail of all your favorite Youtubers">
+                    <button type="submit">Show Thumbnail of all your favorite Youtubers</button>
                 </form>
             </li>
             <li>
@@ -59,29 +95,41 @@
                     <button type="submit">Remove YouTuber</button>
                 </form>
             </li>
-            <li><a href="#option5">Show Random Thumbnail</a></li>
+            <li>
+                <form action="\option5" method="POST" class="option">
+                    <input type="hidden" name="template" value="template1">
+                    <input type="submit" value="Show Random Thumbnail">
+                </form>
+            </li>
             <li>
                 <a href="#option6" onclick="toggleInput('random-youtuber')">Show Random Thumbnail of YouTuber</a>
                 <!-- User input field for Option 6 -->
-                <form id="random-youtuber" class="hidden">
+                <form id="random-youtuber" action="\option6" method="POST" class="hidden">
                     <label for="random-youtuber-name-input">Enter YouTuber Name:</label>
                     <input type="text" id="random-youtuber-name-input" name="random-youtuber-name">
                     <button type="submit">Show Random Thumbnail</button>
                 </form>
             </li>
+            <li>
+                <form action="\logout" method="POST" class="option">
+                    <input type="hidden" name="template" value="template1">
+                    <button type="submit" style="background-color:red">Logout</button>
+                </form>
+
+            </li>
         </ul>
     </div>
-    <div>
+    <div id="content">
         <ul>
             {{range .Video}}
             <li>
                 <h2>{{.Youtuber}}</h2>
-                <img src="{{.Thumbnail}}">
+                <h3>{{.Title}}</h2>
+                <a href="{{.VideoURL}}"><img src="{{.Thumbnail}}" width="600" height="400"></a>
             <li>
             {{end}}
         </ul>
     </div>
-
     <script>
         function toggleInput(id) {
             const form = document.getElementById(id);

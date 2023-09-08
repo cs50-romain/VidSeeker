@@ -20,6 +20,7 @@ type Video struct {
 	Thumbnail	string
 	ReleaseDate	string //Maybe Date
 	ChannelId	string
+	VideoURL	string
 }
 
 
@@ -28,9 +29,12 @@ type Playlist struct {
 		Snippet struct {
 			Title string `json:"title"`
 			Thumbnails struct {
-				Default struct {
+				Maxres struct {
 					URL string `json:"url"`
 				}
+			}
+			ResourceId struct {
+				VideoId string `json:"videoId"` 
 			}
 		}
 	}
@@ -94,8 +98,9 @@ func (v *Video) GetLatestVideo(apik string) {
 	maxresult := "1"
 	v.GetChannelID(apik)
 	p := RetrieveAPIData(apik, v.ChannelId, maxresult)
-	v.Thumbnail = p.Items[0].Snippet.Thumbnails.Default.URL
+	v.Thumbnail = p.Items[0].Snippet.Thumbnails.Maxres.URL
 	v.VideoTitle = p.Items[0].Snippet.Title
+	v.VideoURL = "https://www.youtube.com/watch?v=" + p.Items[0].Snippet.ResourceId.VideoId
 
 	// return p.Items[0].Snippet.Title
 }
@@ -105,8 +110,9 @@ func (v *Video) GetRandomVideo(apik string) {
 	randomInt := rand.Intn(50)
 	v.GetChannelID(apik)
 	p := RetrieveAPIData(apik, v.ChannelId, maxresult) //youtube json with 200 videos
-	v.Thumbnail = p.Items[randomInt].Snippet.Thumbnails.Default.URL
+	v.Thumbnail = p.Items[randomInt].Snippet.Thumbnails.Maxres.URL
 	v.VideoTitle = p.Items[randomInt].Snippet.Title
+	v.VideoURL = "https://www.youtube.com/watch?v=" + p.Items[0].Snippet.ResourceId.VideoId
 }
 
 func RetrieveAPIData(apik string, id string, maxresult string) Playlist{

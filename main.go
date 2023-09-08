@@ -13,11 +13,13 @@ import (
 type Video struct {
 	Youtuber  string
 	Thumbnail string
+	Title     string
+	VideoURL  string
 }
 
 type User struct {
-	Username	string
-	Password	string
+	Username  string
+	Password  string
 }
 
 var youtubers = []string{}
@@ -25,6 +27,82 @@ var youtubers = []string{}
 const apikey = "AIzaSyCBXw_TDGnsxIJMJiuT6itozH6oYGwd-GI"
 var videos = []Video{}
 var userid int
+
+// ONE YOUTUBER'S RANDOM VIDEO
+func ViewOption6(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./static/index.tmpl")
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	youtuber := r.FormValue("random-youtuber-name")
+	if youtuber == "" {
+		http.Redirect(w, r, "/index", http.StatusSeeOther)
+		return
+	}
+
+	video := GetRandomVideo(youtuber)
+
+	singleVideo := []Video{}
+	singleVideo = append(singleVideo, Video{
+		Youtuber: video.ChannelName,
+		Thumbnail: video.Thumbnail,
+		Title: video.VideoTitle,
+		VideoURL: video.VideoURL,
+	})
+
+	data := struct {
+		Video []Video
+	}{
+		Video: singleVideo,
+	}
+
+	err = t.Execute(w, data)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("Received option 6")
+}
+
+// ALL RANDOM VIDEOS
+func ViewOption5(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./static/index.tmpl")
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var tempvideos = []Video{}
+
+	for _, youtuber := range youtubers{
+		video := GetRandomVideo(youtuber)
+		tempvideos = append(tempvideos, Video{
+			Youtuber: video.ChannelName,
+			Thumbnail: video.Thumbnail,
+			Title: video.VideoTitle,
+			VideoURL: video.VideoURL,
+		})
+	}
+
+	data := struct {
+		Video []Video
+	}{
+		Video: tempvideos,
+	}
+
+	err = t.Execute(w, data)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("Received option5")
+}
 
 // REMOVE YOUTUBER
 func ViewOption4(w http.ResponseWriter, r *http.Request) {
@@ -51,10 +129,22 @@ func ViewOption4(w http.ResponseWriter, r *http.Request) {
 	db.RemoveYoutuber(video.Youtuber, userid)
 	InitArray()
 
+	var tempvideos = []Video{}
+
+	for _, youtuber := range youtubers{
+		video := GetMostRecentVideo(youtuber)
+		tempvideos = append(tempvideos, Video{
+			Youtuber: video.ChannelName,
+			Thumbnail: video.Thumbnail,
+			Title: video.VideoTitle,
+			VideoURL: video.VideoURL,
+		})
+	}
+
 	data := struct {
 		Video []Video
 	}{
-		Video: videos,
+		Video: tempvideos,
 	}
 
 	err = t.Execute(w, data)
@@ -101,6 +191,8 @@ func ViewOption3(w http.ResponseWriter, r *http.Request) {
 		tempvideos = append(tempvideos, Video{
 			Youtuber: video.ChannelName,
 			Thumbnail: video.Thumbnail,
+			Title: video.VideoTitle,
+			VideoURL: video.VideoURL,
 		})
 	}
 
@@ -131,12 +223,18 @@ func ViewOption2(w http.ResponseWriter, r *http.Request) {
 	}
 
 	youtuber := r.FormValue("youtuber-name")
+	if youtuber == "" {
+		http.Redirect(w, r, "/index", http.StatusSeeOther)
+		return
+	}
 	video := GetMostRecentVideo(youtuber)
 
 	singleVideo := []Video{}
 	singleVideo = append(singleVideo, Video{
 		Youtuber: video.ChannelName,
 		Thumbnail: video.Thumbnail,
+		Title: video.VideoTitle,
+		VideoURL: video.VideoURL,
 	})
 
 	data := struct {
@@ -170,6 +268,8 @@ func ViewOption1(w http.ResponseWriter, r *http.Request) {
 		tempvideos = append(tempvideos, Video{
 			Youtuber: video.ChannelName,
 			Thumbnail: video.Thumbnail,
+			Title: video.VideoTitle,
+			VideoURL: video.VideoURL,
 		})
 	}
 
@@ -186,6 +286,39 @@ func ViewOption1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("Received option1")
+}
+
+func viewSignup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.ServeFile(w, r, "./static/login.html")
+	}
+
+	fmt.Println("VIEWING SIGNUP NOW")
+
+	user := User {
+		Username: r.FormValue("new-username"),
+		Password: r.FormValue("new-password"),
+	}
+
+	db.AddUser(user.Username, user.Password)
+
+	if loginCheck(user) {
+		fmt.Println("Successfull")
+		InitArray()
+		fmt.Println("init: ", youtubers)
+		http.Redirect(w, r, "/index", http.StatusSeeOther)
+	} else {
+		fmt.Println("Invalid credentials")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+}
+
+func viewLogout(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		youtubers = []string{}
+		videos = []Video{}
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
 }
 
 func viewLogin(w http.ResponseWriter, r *http.Request) {
@@ -232,25 +365,20 @@ func viewIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginCheck(user User) bool{
-	idx := 0
-	for {
-		dbuser, dbpass, user_id, err := db.UserById(idx)
-		if err != nil {
-			fmt.Println("Blocking here")
-			fmt.Println(err)
-		}
-		if user.Username == dbuser && user.Password == dbpass {
-			fmt.Println("Making it here")
-			userid = user_id
-			return true
-		}
-		idx++
+	dbuser, dbpass, user_id, err := db.UserById(user.Username, user.Password)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	if user.Username == dbuser && user.Password == dbpass {
+		userid = user_id
+		return true
 	}
 
 	return false
 }
 
-func GetRandomVideos(youtuber string) yvideo.Video {
+func GetRandomVideo(youtuber string) yvideo.Video {
 	v := new(yvideo.Video)
 	v.ChannelName = youtuber
 	v.GetRandomVideo(apikey)
@@ -271,7 +399,7 @@ func InitArray(){
 		youtubers = []string{}
 	}
 	idx := 4 
-	for idx < 25{
+	for idx < 100{
 		name, err := db.YoutuberById(idx, userid)
 		if err != nil {
 			fmt.Println(err)
@@ -290,11 +418,15 @@ func main() {
 	defer db.Close()
 
 	http.HandleFunc("/", viewLogin)
+	http.HandleFunc("/signup", viewSignup)
 	http.HandleFunc("/index", viewIndex)
+	http.HandleFunc("/logout", viewLogout)
 	http.HandleFunc("/option1", ViewOption1)
 	http.HandleFunc("/option2", ViewOption2)
 	http.HandleFunc("/option3", ViewOption3)
 	http.HandleFunc("/option4", ViewOption4)
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/option5", ViewOption5)
+	http.HandleFunc("/option6", ViewOption6)
+	http.ListenAndServe("192.168.4.82:8080", nil)
 	fmt.Println("Listening...")
 }
