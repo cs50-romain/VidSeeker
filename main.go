@@ -77,11 +77,11 @@ func ViewOption5(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tempvideos = []Video{}
+	//var videos = []Video{}
 
 	for _, youtuber := range youtubers{
 		video := GetRandomVideo(youtuber)
-		tempvideos = append(tempvideos, Video{
+		videos = append(videos, Video{
 			Youtuber: video.ChannelName,
 			Thumbnail: video.Thumbnail,
 			Title: video.VideoTitle,
@@ -92,10 +92,12 @@ func ViewOption5(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Video []Video
 	}{
-		Video: tempvideos,
+		Video: videos,
 	}
 
 	err = t.Execute(w, data)
+
+	videos = []Video{}
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -117,23 +119,13 @@ func ViewOption4(w http.ResponseWriter, r *http.Request) {
 		Youtuber: r.FormValue("remove-youtuber-name"),
 	}
 
-	for idx, value := range videos {
-		if video.Youtuber == value.Youtuber {
-			fmt.Println("Removing: ", video.Youtuber)
-			videos = append(videos[:idx], videos[idx+1:]...)
-			break
-		}
-	}
-
 	// REMOVE FROM DATABASE
 	db.RemoveYoutuber(video.Youtuber, userid)
 	InitArray()
 
-	var tempvideos = []Video{}
-
 	for _, youtuber := range youtubers{
 		video := GetMostRecentVideo(youtuber)
-		tempvideos = append(tempvideos, Video{
+		videos = append(videos, Video{
 			Youtuber: video.ChannelName,
 			Thumbnail: video.Thumbnail,
 			Title: video.VideoTitle,
@@ -144,10 +136,12 @@ func ViewOption4(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Video []Video
 	}{
-		Video: tempvideos,
+		Video: videos,
 	}
 
 	err = t.Execute(w, data)
+
+	videos = []Video{}
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -184,11 +178,9 @@ func ViewOption3(w http.ResponseWriter, r *http.Request) {
 
 	InitArray()
 
-	var tempvideos = []Video{}
-
 	for _, youtuber := range youtubers{
 		video := GetMostRecentVideo(youtuber)
-		tempvideos = append(tempvideos, Video{
+		videos = append(videos, Video{
 			Youtuber: video.ChannelName,
 			Thumbnail: video.Thumbnail,
 			Title: video.VideoTitle,
@@ -199,10 +191,12 @@ func ViewOption3(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Video []Video
 	}{
-		Video: tempvideos,
+		Video: videos,
 	}
 
 	err = t.Execute(w, data)
+
+	videos = []Video{}
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -245,6 +239,8 @@ func ViewOption2(w http.ResponseWriter, r *http.Request) {
 
 	err = t.Execute(w, data)
 
+	videos = []Video{}
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -261,11 +257,9 @@ func ViewOption1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tempvideos = []Video{}
-
 	for _, youtuber := range youtubers{
 		video := GetMostRecentVideo(youtuber)
-		tempvideos = append(tempvideos, Video{
+		videos = append(videos, Video{
 			Youtuber: video.ChannelName,
 			Thumbnail: video.Thumbnail,
 			Title: video.VideoTitle,
@@ -276,10 +270,12 @@ func ViewOption1(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Video []Video
 	}{
-		Video: tempvideos,
+		Video: videos,
 	}
 
 	err = t.Execute(w, data)
+
+	videos = []Video{}
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
