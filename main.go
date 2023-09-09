@@ -30,258 +30,280 @@ var userid int
 
 // ONE YOUTUBER'S RANDOM VIDEO
 func ViewOption6(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("./static/index.tmpl")
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if r.Method == http.MethodPost{
+		t, err := template.ParseFiles("./static/index.tmpl")
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		youtuber := r.FormValue("random-youtuber-name")
+		if youtuber == "" {
+			http.Redirect(w, r, "/index", http.StatusSeeOther)
+			return
+		}
+
+		video := GetRandomVideo(youtuber)
+
+		singleVideo := []Video{}
+		singleVideo = append(singleVideo, Video{
+			Youtuber: video.ChannelName,
+			Thumbnail: video.Thumbnail,
+			Title: video.VideoTitle,
+			VideoURL: video.VideoURL,
+		})
+
+		data := struct {
+			Video []Video
+		}{
+			Video: singleVideo,
+		}
+
+		err = t.Execute(w, data)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Println("Received option 6")
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
-
-	youtuber := r.FormValue("random-youtuber-name")
-	if youtuber == "" {
-		http.Redirect(w, r, "/index", http.StatusSeeOther)
-		return
-	}
-
-	video := GetRandomVideo(youtuber)
-
-	singleVideo := []Video{}
-	singleVideo = append(singleVideo, Video{
-		Youtuber: video.ChannelName,
-		Thumbnail: video.Thumbnail,
-		Title: video.VideoTitle,
-		VideoURL: video.VideoURL,
-	})
-
-	data := struct {
-		Video []Video
-	}{
-		Video: singleVideo,
-	}
-
-	err = t.Execute(w, data)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("Received option 6")
 }
 
 // ALL RANDOM VIDEOS
 func ViewOption5(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("./static/index.tmpl")
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if r.Method == http.MethodPost {
+		t, err := template.ParseFiles("./static/index.tmpl")
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		for _, youtuber := range youtubers{
+			video := GetRandomVideo(youtuber)
+			videos = append(videos, Video{
+				Youtuber: video.ChannelName,
+				Thumbnail: video.Thumbnail,
+				Title: video.VideoTitle,
+				VideoURL: video.VideoURL,
+			})
+		}
+
+		data := struct {
+			Video []Video
+		}{
+			Video: videos,
+		}
+
+		err = t.Execute(w, data)
+
+		videos = []Video{}
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Println("Received option5")
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
-
-	//var videos = []Video{}
-
-	for _, youtuber := range youtubers{
-		video := GetRandomVideo(youtuber)
-		videos = append(videos, Video{
-			Youtuber: video.ChannelName,
-			Thumbnail: video.Thumbnail,
-			Title: video.VideoTitle,
-			VideoURL: video.VideoURL,
-		})
-	}
-
-	data := struct {
-		Video []Video
-	}{
-		Video: videos,
-	}
-
-	err = t.Execute(w, data)
-
-	videos = []Video{}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("Received option5")
 }
 
 // REMOVE YOUTUBER
 func ViewOption4(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("./static/index.tmpl")
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if r.Method == http.MethodPost {
+		t, err := template.ParseFiles("./static/index.tmpl")
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		video := Video{
+			Youtuber: r.FormValue("remove-youtuber-name"),
+		}
+
+		// REMOVE FROM DATABASE
+		db.RemoveYoutuber(video.Youtuber, userid)
+		InitArray()
+
+		for _, youtuber := range youtubers{
+			video := GetMostRecentVideo(youtuber)
+			videos = append(videos, Video{
+				Youtuber: video.ChannelName,
+				Thumbnail: video.Thumbnail,
+				Title: video.VideoTitle,
+				VideoURL: video.VideoURL,
+			})
+		}
+
+		data := struct {
+			Video []Video
+		}{
+			Video: videos,
+		}
+
+		err = t.Execute(w, data)
+
+		videos = []Video{}
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Println(videos)
+		fmt.Println("Received Option 4")
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
-
-	video := Video{
-		Youtuber: r.FormValue("remove-youtuber-name"),
-	}
-
-	// REMOVE FROM DATABASE
-	db.RemoveYoutuber(video.Youtuber, userid)
-	InitArray()
-
-	for _, youtuber := range youtubers{
-		video := GetMostRecentVideo(youtuber)
-		videos = append(videos, Video{
-			Youtuber: video.ChannelName,
-			Thumbnail: video.Thumbnail,
-			Title: video.VideoTitle,
-			VideoURL: video.VideoURL,
-		})
-	}
-
-	data := struct {
-		Video []Video
-	}{
-		Video: videos,
-	}
-
-	err = t.Execute(w, data)
-
-	videos = []Video{}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Println(videos)
-	fmt.Println("Received Option 4")
 }
 
 // ADD YOUTUBER
 func ViewOption3(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("./static/index.tmpl")
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if r.Method == http.MethodPost {
+		t, err := template.ParseFiles("./static/index.tmpl")
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		youtuber := r.FormValue("new-youtuber-name")
+		fmt.Println(youtuber)
+
+		// ADD TO DATABASE
+		v := new(yvideo.Video)
+		v.ChannelName = (youtuber)
+		err = v.GetChannelID(apikey)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Println(v)
+		playlistid := "UU" + v.ChannelId[2:]
+		db.AddYoutuber(v.ChannelName, v.ChannelId, playlistid, userid)
+
+		InitArray()
+
+		for _, youtuber := range youtubers{
+			video := GetMostRecentVideo(youtuber)
+			videos = append(videos, Video{
+				Youtuber: video.ChannelName,
+				Thumbnail: video.Thumbnail,
+				Title: video.VideoTitle,
+				VideoURL: video.VideoURL,
+			})
+		}
+
+		data := struct {
+			Video []Video
+		}{
+			Video: videos,
+		}
+
+		err = t.Execute(w, data)
+
+		videos = []Video{}
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/option1", http.StatusSeeOther)
+		fmt.Println("Received Option 3")
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
-
-	youtuber := r.FormValue("new-youtuber-name")
-	fmt.Println(youtuber)
-
-	// ADD TO DATABASE
-	v := new(yvideo.Video)
-	v.ChannelName = (youtuber)
-	err = v.GetChannelID(apikey)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	fmt.Println(v)
-	playlistid := "UU" + v.ChannelId[2:]
-	db.AddYoutuber(v.ChannelName, v.ChannelId, playlistid, userid)
-
-	InitArray()
-
-	for _, youtuber := range youtubers{
-		video := GetMostRecentVideo(youtuber)
-		videos = append(videos, Video{
-			Youtuber: video.ChannelName,
-			Thumbnail: video.Thumbnail,
-			Title: video.VideoTitle,
-			VideoURL: video.VideoURL,
-		})
-	}
-
-	data := struct {
-		Video []Video
-	}{
-		Video: videos,
-	}
-
-	err = t.Execute(w, data)
-
-	videos = []Video{}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "/option1", http.StatusSeeOther)
-	fmt.Println("Received Option 3")
 }
 
 // ONE YOUTUBER"S VIDEO
 func ViewOption2(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("./static/index.tmpl")
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	if r.Method == http.MethodPost {
+		t, err := template.ParseFiles("./static/index.tmpl")
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-	youtuber := r.FormValue("youtuber-name")
-	if youtuber == "" {
-		http.Redirect(w, r, "/index", http.StatusSeeOther)
-		return
-	}
-	video := GetMostRecentVideo(youtuber)
-
-	singleVideo := []Video{}
-	singleVideo = append(singleVideo, Video{
-		Youtuber: video.ChannelName,
-		Thumbnail: video.Thumbnail,
-		Title: video.VideoTitle,
-		VideoURL: video.VideoURL,
-	})
-
-	data := struct {
-		Video []Video
-	}{
-		Video: singleVideo,
-	}
-
-	err = t.Execute(w, data)
-
-	videos = []Video{}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("Received option 2")
-}
-
-// ALL MOST RECENT VIDEOS
-func ViewOption1(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("./static/index.tmpl")
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	for _, youtuber := range youtubers{
+		youtuber := r.FormValue("youtuber-name")
+		if youtuber == "" {
+			http.Redirect(w, r, "/index", http.StatusSeeOther)
+			return
+		}
 		video := GetMostRecentVideo(youtuber)
-		videos = append(videos, Video{
+
+		singleVideo := []Video{}
+		singleVideo = append(singleVideo, Video{
 			Youtuber: video.ChannelName,
 			Thumbnail: video.Thumbnail,
 			Title: video.VideoTitle,
 			VideoURL: video.VideoURL,
 		})
+
+		data := struct {
+			Video []Video
+		}{
+			Video: singleVideo,
+		}
+
+		err = t.Execute(w, data)
+
+		videos = []Video{}
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Println("Received option 2")
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
+}
 
-	data := struct {
-		Video []Video
-	}{
-		Video: videos,
+// ALL MOST RECENT VIDEOS
+func ViewOption1(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		t, err := template.ParseFiles("./static/index.tmpl")
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		for _, youtuber := range youtubers{
+			video := GetMostRecentVideo(youtuber)
+			videos = append(videos, Video{
+				Youtuber: video.ChannelName,
+				Thumbnail: video.Thumbnail,
+				Title: video.VideoTitle,
+				VideoURL: video.VideoURL,
+			})
+		}
+
+		data := struct {
+			Video []Video
+		}{
+			Video: videos,
+		}
+
+		err = t.Execute(w, data)
+
+		videos = []Video{}
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Println("Received option1")
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
-
-	err = t.Execute(w, data)
-
-	videos = []Video{}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("Received option1")
 }
 
 func viewSignup(w http.ResponseWriter, r *http.Request) {
