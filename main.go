@@ -131,7 +131,10 @@ func ViewOption4(w http.ResponseWriter, r *http.Request) {
 		InitArray()
 
 		for _, youtuber := range youtubers{
-			video := GetMostRecentVideo(youtuber)
+			video, err := GetMostRecentVideo(youtuber)
+			if err != nil {
+				break
+			}
 			videos = append(videos, Video{
 				Youtuber: video.ChannelName,
 				Thumbnail: video.Thumbnail,
@@ -190,7 +193,10 @@ func ViewOption3(w http.ResponseWriter, r *http.Request) {
 		InitArray()
 
 		for _, youtuber := range youtubers{
-			video := GetMostRecentVideo(youtuber)
+			video, err := GetMostRecentVideo(youtuber)
+			if err != nil {
+				break
+			}
 			videos = append(videos, Video{
 				Youtuber: video.ChannelName,
 				Thumbnail: video.Thumbnail,
@@ -236,16 +242,20 @@ func ViewOption2(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/index", http.StatusSeeOther)
 			return
 		}
-		video := GetMostRecentVideo(youtuber)
-
+		
 		singleVideo := []Video{}
-		singleVideo = append(singleVideo, Video{
-			Youtuber: video.ChannelName,
-			Thumbnail: video.Thumbnail,
-			Title: video.VideoTitle,
-			VideoURL: video.VideoURL,
-		})
-
+		video, err := GetMostRecentVideo(youtuber)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			singleVideo = append(singleVideo, Video{
+				Youtuber: video.ChannelName,
+				Thumbnail: video.Thumbnail,
+				Title: video.VideoTitle,
+				VideoURL: video.VideoURL,
+			})
+		}
+		
 		data := struct {
 			Video []Video
 		}{
@@ -277,7 +287,10 @@ func ViewOption1(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, youtuber := range youtubers{
-			video := GetMostRecentVideo(youtuber)
+			video, err := GetMostRecentVideo(youtuber)
+			if err != nil {
+				break
+			}
 			videos = append(videos, Video{
 				Youtuber: video.ChannelName,
 				Thumbnail: video.Thumbnail,
@@ -404,12 +417,15 @@ func GetRandomVideo(youtuber string) yvideo.Video {
 	return *v
 }
 
-func GetMostRecentVideo(youtuber string) yvideo.Video {
+func GetMostRecentVideo(youtuber string) (yvideo.Video, error) {
 	v := new(yvideo.Video)
 	v.ChannelName = youtuber
-	v.GetLatestVideo(apikey)
+	err := v.GetLatestVideo(apikey)
+	if err != nil {
+		return *v, err
+	}
 
-	return *v
+	return *v, nil
 }
 
 func InitArray(){
@@ -447,6 +463,6 @@ func main() {
 	http.HandleFunc("/option4", ViewOption4)
 	http.HandleFunc("/option5", ViewOption5)
 	http.HandleFunc("/option6", ViewOption6)
-	http.ListenAndServe("192.168.4.85:8080", nil)
+	http.ListenAndServe("192.168.4.87:8080", nil)
 	fmt.Println("Listening...")
 }

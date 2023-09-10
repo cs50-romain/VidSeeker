@@ -94,14 +94,18 @@ func (v *Video) GetChannelID(apik string) error {
 	return nil
 }
 
-func (v *Video) GetLatestVideo(apik string) {
+func (v *Video) GetLatestVideo(apik string) error{
 	maxresult := "1"
-	v.GetChannelID(apik)
+	err := v.GetChannelID(apik)
+	if err != nil {
+		return err
+	}
 	p := RetrieveAPIData(apik, v.ChannelId, maxresult)
 	v.Thumbnail = p.Items[0].Snippet.Thumbnails.Maxres.URL
 	v.VideoTitle = p.Items[0].Snippet.Title
 	v.VideoURL = "https://www.youtube.com/watch?v=" + p.Items[0].Snippet.ResourceId.VideoId
 
+	return nil
 	// return p.Items[0].Snippet.Title
 }
 
