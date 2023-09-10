@@ -35,7 +35,7 @@
         }
 
         h2 {
-            color: #c62214;
+            color: red;
             font-size: 24px;
             font-weight: bold;
             margin: 20px 0;
@@ -55,6 +55,18 @@
             max-height: 100px;
             overflow: auto;
         }
+        .common-style {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 15px;
+        }
         /* Define your styles for the options as needed */
     </style>
 </head>
@@ -65,11 +77,12 @@
             <li>
                 <form action="\option1" method="POST" class="option">
                     <input type="hidden" name="template" value="template1">
-                    <button type="submit">Show Thumbnail of all your favorite Youtubers</button>
+                    <button class="common-style" type="submit">Show Thumbnail of all your favorite Youtubers</button>
                 </form>
             </li>
+            <hr>
             <li>
-                <a href="#option2" onclick="toggleInput('youtuber-name')">Show Thumbnail of YouTuber</a>
+                <a class="common-style" href="#option2" onclick="toggleInput('youtuber-name')">Show Thumbnail of YouTuber</a>
                 <!-- User input field for Option 2 -->
                 <form id="youtuber-name" action="\option2" method="POST" class="hidden">
                     <label for="youtuber-name-input">Enter YouTuber Name:</label>
@@ -77,45 +90,49 @@
                     <button type="submit">Show Thumbnail</button>
                 </form>
             </li>
+            <hr>
             <li>
-                <a href="#option3" onclick="toggleInput('new-youtuber')">Add a YouTuber</a>
+                <a class="common-style" href="#option3" onclick="toggleInput('new-youtuber')">Add a YouTuber</a>
                 <!-- User input fields for Option 3 -->
                 <form id="new-youtuber" action="\option3" method="POST" class="hidden">
                     <label for="new-youtuber-name-input">YouTuber Name:</label>
                     <input type="text" id="new-youtuber-name-input" name="new-youtuber-name">
-                    <button type="submit">Add YouTuber</button>
+                    <button class="common-style" type="submit">Add YouTuber</button>
                 </form>
             </li>
+            <hr>
             <li>
-                <a href="#option4" onclick="toggleInput('remove-youtuber')">Remove a YouTuber</a>
+                <a class="common-style" href="#option4" onclick="toggleInput('remove-youtuber')">Remove a YouTuber</a>
                 <!-- User input field for Option 4 -->
                 <form id="remove-youtuber" action="\option4" method="POST" class="hidden">
                     <label for="remove-youtuber-name-input">Enter YouTuber Name:</label>
                     <input type="text" id="remove-youtuber-name-input" name="remove-youtuber-name">
-                    <button type="submit">Remove YouTuber</button>
+                    <button class="common-style" type="submit">Remove YouTuber</button>
                 </form>
             </li>
+            <hr>
             <li>
                 <form action="\option5" method="POST" class="option">
                     <input type="hidden" name="template" value="template1">
-                    <input type="submit" value="Show Random Thumbnail">
+                    <input class="common-style" type="submit" value="Show Random Thumbnail">
                 </form>
             </li>
+            <hr>
             <li>
-                <a href="#option6" onclick="toggleInput('random-youtuber')">Show Random Thumbnail of YouTuber</a>
+                <a class="common-style" href="#option6" onclick="toggleInput('random-youtuber')">Show Random Thumbnail of YouTuber</a>
                 <!-- User input field for Option 6 -->
                 <form id="random-youtuber" action="\option6" method="POST" class="hidden">
                     <label for="random-youtuber-name-input">Enter YouTuber Name:</label>
                     <input type="text" id="random-youtuber-name-input" name="random-youtuber-name">
-                    <button type="submit">Show Random Thumbnail</button>
+                    <button class="common-style" type="submit">Show Random Thumbnail</button>
                 </form>
             </li>
+            <hr>
             <li>
                 <form action="\logout" method="POST" class="option">
                     <input type="hidden" name="template" value="template1">
-                    <button type="submit" style="background-color:red">Logout</button>
+                    <button class="common-style" type="submit" style="background-color:red">Logout</button>
                 </form>
-
             </li>
         </ul>
     </div>

@@ -435,6 +435,8 @@ func main() {
 	}
 	defer db.Close()
 
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
 	http.HandleFunc("/", viewLogin)
 	http.HandleFunc("/signup", viewSignup)
 	http.HandleFunc("/index", viewIndex)
@@ -445,6 +447,6 @@ func main() {
 	http.HandleFunc("/option4", ViewOption4)
 	http.HandleFunc("/option5", ViewOption5)
 	http.HandleFunc("/option6", ViewOption6)
-	http.ListenAndServe("192.168.4.82:8080", nil)
+	http.ListenAndServe("192.168.4.85:8080", nil)
 	fmt.Println("Listening...")
 }
