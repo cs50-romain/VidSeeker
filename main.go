@@ -44,15 +44,21 @@ func ViewOption6(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		video := GetRandomVideo(youtuber)
+		video, err := GetRandomVideo(youtuber)
 
 		singleVideo := []Video{}
-		singleVideo = append(singleVideo, Video{
-			Youtuber: video.ChannelName,
-			Thumbnail: video.Thumbnail,
-			Title: video.VideoTitle,
-			VideoURL: video.VideoURL,
-		})
+
+		if err != nil {
+			http.Redirect(w, r, "/index", http.StatusSeeOther)
+			return
+		} else {
+			singleVideo = append(singleVideo, Video{
+				Youtuber: video.ChannelName,
+				Thumbnail: video.Thumbnail,
+				Title: video.VideoTitle,
+				VideoURL: video.VideoURL,
+			})
+		}
 
 		data := struct {
 			Video []Video
@@ -83,7 +89,10 @@ func ViewOption5(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, youtuber := range youtubers{
-			video := GetRandomVideo(youtuber)
+			video, err := GetRandomVideo(youtuber)
+			if err != nil {
+				break
+			}
 			videos = append(videos, Video{
 				Youtuber: video.ChannelName,
 				Thumbnail: video.Thumbnail,
@@ -246,7 +255,7 @@ func ViewOption2(w http.ResponseWriter, r *http.Request) {
 		singleVideo := []Video{}
 		video, err := GetMostRecentVideo(youtuber)
 		if err != nil {
-			fmt.Println(err)
+			http.Redirect(w, r, "/index", http.StatusSeeOther)
 		} else {
 			singleVideo = append(singleVideo, Video{
 				Youtuber: video.ChannelName,
@@ -409,12 +418,15 @@ func loginCheck(user User) bool{
 	return false
 }
 
-func GetRandomVideo(youtuber string) yvideo.Video {
+func GetRandomVideo(youtuber string) (yvideo.Video, error) {
 	v := new(yvideo.Video)
 	v.ChannelName = youtuber
-	v.GetRandomVideo(apikey)
+	err := v.GetRandomVideo(apikey)
+	if err != nil {
+		return *v, nil
+	}
 
-	return *v
+	return *v, nil
 }
 
 func GetMostRecentVideo(youtuber string) (yvideo.Video, error) {

@@ -109,14 +109,19 @@ func (v *Video) GetLatestVideo(apik string) error{
 	// return p.Items[0].Snippet.Title
 }
 
-func (v *Video) GetRandomVideo(apik string) {
+func (v *Video) GetRandomVideo(apik string) error {
 	maxresult := "200"
 	randomInt := rand.Intn(50)
-	v.GetChannelID(apik)
+	err := v.GetChannelID(apik)
+	if err != nil {
+		return err
+	}
 	p := RetrieveAPIData(apik, v.ChannelId, maxresult) //youtube json with 200 videos
 	v.Thumbnail = p.Items[randomInt].Snippet.Thumbnails.Maxres.URL
 	v.VideoTitle = p.Items[randomInt].Snippet.Title
 	v.VideoURL = "https://www.youtube.com/watch?v=" + p.Items[randomInt].Snippet.ResourceId.VideoId
+
+	return nil
 }
 
 func RetrieveAPIData(apik string, id string, maxresult string) Playlist{
